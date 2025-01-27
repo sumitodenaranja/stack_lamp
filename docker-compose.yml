@@ -1,0 +1,54 @@
+services:
+  www:
+    image: apache_swarm:latest
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./html:/var/www/html/
+    networks:
+      - lamp-network
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: on-failure
+
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: bolson
+      MYSQL_DATABASE: dbmalaga
+      MYSQL_USER: frodo
+      MYSQL_PASSWORD: bolson
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - /root/cluster/pueblosmalaga.sql:/docker-entrypoint-initdb.d/pueblosmalaga.sql
+    networks:
+      - lamp-network
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: swarm_mysql
+      PMA_USER: frodo
+      PMA_PASSWORD: bolson
+    networks:
+      - lamp-network
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+networks:
+  lamp-network:
+    driver: overlay
+
+volumes:
+  mysql_data:
+    driver: local
